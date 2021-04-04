@@ -31,29 +31,27 @@ class NWinnerSpider(scrapy.Spider):
 
         for h3 in list(h3s)[:2]:
             country = h3.xpath('span[@class="mw-headline"]/text()').extract()
-
-
             if country:
                 winners = h3.xpath('following-sibling::ol[1]')
-
+                wdata = test()
                 for w in winners.xpath('li'):
                     wdata = process_winner_li(w, country[0])
+                    
                     request = scrapy.Request(wdata['link'], callback=self.parse_bio, dont_filter=True)
                     request.meta['item'] = NWinnerItem(**wdata)
-
                     yield request
 
-    def parse_bio(self, respone):
-        item = respone.meta['item']
-        href = respone.xpath("//li[@id='t-wikibase']/a/@href").extract()
+    def parse_bio(self, response):
+        item = response.meta['item']
+        href = response.xpath("//li[@id='t-wikibase']/a/@href").extract()
 
         if href:
             request = scrapy.Request('https:' + href[0], callback=self.parse_wikidata, dont_filter=True)
             request.meta['item'] = item
             yield request
 
-    def parse_wikidata(self, respone):
-        item = respone.meta['item']
+    def parse_wikidata(self, response):
+        item = response.meta['item']
         property_codes = [
             {'name':'date_of_birth', 'code': 'P569'},
             {'name':'date_of_death', 'code': 'P570'},
@@ -69,47 +67,51 @@ class NWinnerSpider(scrapy.Spider):
             if prop.get('link'):
                 link_html = '/a'
             
-            sel = respone.xpath(p_template.format(code=prop['code'], link_html=link_html))
+            sel = response.xpath(p_template.format(code=prop['code'], link_html=link_html))
 
             if sel:
                 item[prop['name']] = sel[0].extract()
 
         yield item
 
-    def process_winner_li(w, country=None):
-        wdata = {}
+def process_winner_li(w, country=None):
+    wdata = {}
 
-        wdata['link'] = BASE_URL + w.xpath('a/@href').extract()[0]
+    wdata['link'] = BASE_URL + w.xpath('a/@href').extract()[0]
 
-        text = ' '.join(w.xpath('descendant-or-self::text()')).extract())
+    text = ' '.join(w.xpath('descendant-or-self::text()').extract())
 
-        wdata['name'] = text.split(',')[0].strip()
+    wdata['name'] = text.split(',')[0].strip()
 
-        year = re.findall('\d{4}', text)
+    year = re.findall('\d{4}', text)
 
-        if year:
-            wdata['year'] = int(year[0])
+    if year:
+        wdata['year'] = int(year[0])
 
+    else:
+        wdata['year'] = 0
+        print('Oops, no year in ', text)
+
+    category = re.findall('Physics|Chemistry|Physiology or Medicine|literature|Peace|Economics', text)
+
+    if category:
+        wdata['category'] = category[0]
+    
+    else:
+        wdata['category'] = ''
+        print('Oops, no category in ',text)
+
+    if country:
+        if text.find('*') != -1:
+            wdata['country'] = ''
+            wdata['born_in'] = country
+            
         else:
-            wdata['year'] = 0
-            print('Oops, no year in ', text)
+            wdata['country'] = country
+            wdata['born_in'] = ''
 
-        category = re.findall('Physics|Chemistry|Physiology or Medicine|literature|Peace|Economics', text)
+    wdata['text'] = text
+    return wdata
 
-        if category:
-            wdata['category'] = category[0]
-        
-        else:
-            wdata['category'] = ''
-            print('Oops, no category in ',text)
-
-        if country:
-            if text.find('*') != -1:
-                wdata['country'] = ''
-                wdata['born_in'] = country
-            else:
-                wdata['country'] = country
-                wdata['born_in'] = ''
-
-        wdata['text'] = text
-        return wdata
+def test():
+    pass

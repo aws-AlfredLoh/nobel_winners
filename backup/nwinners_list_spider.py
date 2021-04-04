@@ -44,7 +44,7 @@ class NWinnerSpider(scrapy.Spider):
 
         wdata['link'] = BASE_URL + w.xpath('a/@href').extract()[0]
 
-        text = ' '.join(w.xpath('descendant-or-self::text()')).extract())
+        text = ' '.join(w.xpath('descendant-or-self::text()').extract())
 
         wdata['name'] = text.split(',')[0].strip()
 
