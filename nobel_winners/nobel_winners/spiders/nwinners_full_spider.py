@@ -21,7 +21,9 @@ class NWinnerItem(scrapy.Item):
 class NWinnerSpider(scrapy.Spider):
     name = 'nwinners_full'
     allowed_domains = ['en.wikipedia.org']
-    start_urls = ["https://en.wikipedia.org/wiki/List_of_Nobel_laureates_by_country"]
+    start_urls = [
+        "https://en.wikipedia.org/wiki/List_of_Nobel_laureates_by_country"
+        ]
 
     def parse(self, response):
 
@@ -29,14 +31,13 @@ class NWinnerSpider(scrapy.Spider):
 
         h3s = response.xpath('//h3')
 
-        for h3 in list(h3s)[:2]:
+        for h3 in h3s:
             country = h3.xpath('span[@class="mw-headline"]/text()').extract()
             if country:
                 winners = h3.xpath('following-sibling::ol[1]')
-                wdata = test()
+                
                 for w in winners.xpath('li'):
                     wdata = process_winner_li(w, country[0])
-                    
                     request = scrapy.Request(wdata['link'], callback=self.parse_bio, dont_filter=True)
                     request.meta['item'] = NWinnerItem(**wdata)
                     yield request
@@ -46,29 +47,33 @@ class NWinnerSpider(scrapy.Spider):
         href = response.xpath("//li[@id='t-wikibase']/a/@href").extract()
 
         if href:
-            request = scrapy.Request('https:' + href[0], callback=self.parse_wikidata, dont_filter=True)
+            #url = 'https:' + href[0]
+            url = href[0]
+            request = scrapy.Request(url , callback=self.parse_wikidata, dont_filter=True)
             request.meta['item'] = item
-            yield request
+        
+        yield request
 
     def parse_wikidata(self, response):
         item = response.meta['item']
         property_codes = [
-            {'name':'date_of_birth', 'code': 'P569'},
-            {'name':'date_of_death', 'code': 'P570'},
-            {'name':'place_of_birth', 'code': 'P19', 'link': True},
-            {'name':'place_of_death', 'code': 'P20', 'link': True},
-            {'name':'gender', 'code': 'P21', 'link': True}
+            {'name':'date_of_birth', 'code':'P569'},
+            {'name':'date_of_death', 'code':'P570'},
+            {'name':'place_of_birth', 'code':'P19', 'link':True},
+            {'name':'place_of_death', 'code':'P20', 'link':True},
+            {'name':'gender', 'code':'P21', 'link':True}
         ]
 
-        p_template = '//*[@id="{code}"]/div[2]/div/div/div[2]/div[1]/div/div[2]/div[2]{link_html}/text()'
+        p_template = '//*[@id="{code}"]/div[2]/div/div/div[2]' \
+                     '/div[1]/div/div[2]/div[2]{link_html}/text()'
 
         for prop in property_codes:
+
             link_html = ''
             if prop.get('link'):
                 link_html = '/a'
-            
-            sel = response.xpath(p_template.format(code=prop['code'], link_html=link_html))
-
+            sel = response.xpath(p_template.format(\
+                code=prop['code'], link_html=link_html))
             if sel:
                 item[prop['name']] = sel[0].extract()
 
@@ -92,7 +97,7 @@ def process_winner_li(w, country=None):
         wdata['year'] = 0
         print('Oops, no year in ', text)
 
-    category = re.findall('Physics|Chemistry|Physiology or Medicine|literature|Peace|Economics', text)
+    category = re.findall('Physics|Chemistry|Physiology or Medicine|Literature|Peace|Economics', text)
 
     if category:
         wdata['category'] = category[0]
@@ -113,5 +118,3 @@ def process_winner_li(w, country=None):
     wdata['text'] = text
     return wdata
 
-def test():
-    pass
