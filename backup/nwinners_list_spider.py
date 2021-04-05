@@ -39,40 +39,40 @@ class NWinnerSpider(scrapy.Spider):
 
                     yield NWinnerItem(country=country[0], name=text[0], link_text=' '.join(text))
 
-    def process_winner_li(w, country=None):
-        wdata = {}
+def process_winner_li(w, country=None):
+    wdata = {}
 
-        wdata['link'] = BASE_URL + w.xpath('a/@href').extract()[0]
+    wdata['link'] = BASE_URL + w.xpath('a/@href').extract()[0]
 
-        text = ' '.join(w.xpath('descendant-or-self::text()').extract())
+    text = ' '.join(w.xpath('descendant-or-self::text()').extract())
 
-        wdata['name'] = text.split(',')[0].strip()
+    wdata['name'] = text.split(',')[0].strip()
 
-        year = re.findall('\d{4}', text)
+    year = re.findall('\d{4}', text)
 
-        if year:
-            wdata['year'] = int(year[0])
+    if year:
+        wdata['year'] = int(year[0])
 
+    else:
+        wdata['year'] = 0
+        print('Oops, no year in ', text)
+
+    category = re.findall('Physics|Chemistry|Physiology or Medicine|literature|Peace|Economics', text)
+
+    if category:
+        wdata['category'] = category[0]
+    
+    else:
+        wdata['category'] = ''
+        print('Oops, no category in ',text)
+
+    if country:
+        if text.find('*') != -1:
+            wdata['country'] = ''
+            wdata['born_in'] = country
         else:
-            wdata['year'] = 0
-            print('Oops, no year in ', text)
+            wdata['country'] = country
+            wdata['born_in'] = ''
 
-        category = re.findall('Physics|Chemistry|Physiology or Medicine|literature|Peace|Economics', text)
-
-        if category:
-            wdata['category'] = category[0]
-        
-        else:
-            wdata['category'] = ''
-            print('Oops, no category in ',text)
-
-        if country:
-            if text.find('*') != -1:
-                wdata['country'] = ''
-                wdata['born_in'] = country
-            else:
-                wdata['country'] = country
-                wdata['born_in'] = ''
-
-        wdata['text'] = text
-        return wdata
+    wdata['text'] = text
+    return wdata
