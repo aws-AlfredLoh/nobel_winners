@@ -65,7 +65,7 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'nobel_winners.pipelines.NobelWinnersPipeline': 300,
+    'nobel_winners.pipelines.DropNonPersons': 1,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
