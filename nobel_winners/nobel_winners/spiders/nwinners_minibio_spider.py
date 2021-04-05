@@ -20,6 +20,7 @@ class NWinnerSpiderBio(scrapy.Spider):
         "https://en.wikipedia.org/wiki/List_of_Nobel_laureates_by_country"
         ]
 
+
     def parse(self, response):
 
         filename = response.url.split('/')[-1]
@@ -35,7 +36,7 @@ class NWinnerSpiderBio(scrapy.Spider):
                     wdata = {}
                     wdata['link'] = BASE_URL + w.xpath('a/@href').extract()[0]
                     request = scrapy.Request(wdata['link'], callback=self.get_mini_bio)
-                    request.meta['item'] = NWinnerItem(**wdata)
+                    request.meta['item'] = NWinnerItemBio(**wdata)
                     yield request
 
     def get_mini_bio(self, response):
