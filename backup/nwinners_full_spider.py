@@ -72,8 +72,9 @@ class NWinnerSpider(scrapy.Spider):
             link_html = ''
             if prop.get('link'):
                 link_html = '/a'
-            sel = response.xpath(p_template.format(\
-                code=prop['code'], link_html=link_html))
+                
+            sel = response.xpath(p_template.format(code=prop['code'], link_html=link_html))
+
             if sel:
                 item[prop['name']] = sel[0].extract()
 
